@@ -62,9 +62,7 @@ module Servant.Checked.Exceptions.Internal.Envelope
 import Control.Applicative ((<|>))
 import Control.Lens (Iso, Prism, Prism', iso, preview, prism)
 import Control.Monad.Fix (MonadFix(mfix))
-import Data.Aeson
-       (FromJSON(parseJSON), ToJSON(toJSON), Value, (.=), (.:), object,
-        withObject)
+import Data.Aeson (FromJSON(parseJSON), ToJSON(toJSON), Value)
 import Data.Aeson.Types (Parser)
 import Data.Data (Data)
 import Data.Semigroup (Semigroup((<>), stimes), stimesIdempotent)
@@ -388,37 +386,36 @@ catchesEnvelope tuple _ (ErrEnvelope u) = catchesOpenUnion tuple u
 
 -- data EnvelopeHandler es x = forall e. IsMember e es => EnvelopeHandler (e -> x)
 
--- | This 'ToJSON' instance encodes an 'Envelope' as an object with one of two
--- keys depending on whether it is a 'SuccEnvelope' or an 'ErrEnvelope'.
+-- | This 'ToJSON' instance simply encodes an 'Envelope' by deferring directly
+-- to the instances for the @es@ and @a@, without any additional wrapping.
 --
 -- Here is an example of a 'SuccEnvelope':
 --
 -- >>> let string = "hello" :: String
 -- >>> let env = toSuccEnvelope string :: Envelope '[Double] String
 -- >>> putByteStrLn $ encode env
--- {"data":"hello"}
+-- "hello"
 --
 -- Here is an example of a 'ErrEnvelope':
 --
 -- >>> let double = 3.5 :: Double
 -- >>> let env' = toErrEnvelope double :: Envelope '[Double] String
 -- >>> putByteStrLn $ encode env'
--- {"err":3.5}
+-- 3.5
 instance (ToJSON (OpenUnion es), ToJSON a) => ToJSON (Envelope es a) where
   toJSON :: Envelope es a -> Value
-  toJSON (ErrEnvelope es) = object ["err" .= es]
-  toJSON (SuccEnvelope a) = object ["data" .= a]
+  toJSON (ErrEnvelope es) = toJSON es
+  toJSON (SuccEnvelope a) = toJSON a
 
 -- | This is only a valid instance when the 'FromJSON' instances for the @es@
--- don't overlap.
+-- and @a@ don't overlap.
 --
 -- For an explanation, see the documentation on the 'FromJSON' instance for
 -- 'Union'.
 instance (FromJSON (OpenUnion es), FromJSON a) => FromJSON (Envelope es a) where
   parseJSON :: Value -> Parser (Envelope es a)
-  parseJSON = withObject "Envelope" $ \obj ->
-    SuccEnvelope <$> obj .: "data" <|>
-    ErrEnvelope <$> obj .: "err"
+  parseJSON val = SuccEnvelope <$> parseJSON val
+              <|> ErrEnvelope <$> parseJSON val
 
 deriving instance (Data (OpenUnion es), Data a, Typeable es) => Data (Envelope es a)
 deriving instance (Eq (OpenUnion es), Eq a) => Eq (Envelope es a)
