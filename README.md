@@ -122,7 +122,7 @@ $ curl \
     --request POST \
     --header 'Accept: application/json' \
     'http://localhost:8201/lax-search/hello'
-{"data":"good"}
+"good"
 ```
 
 If you try to send a query that is not `hello`, the server will return an error:
@@ -132,7 +132,7 @@ $ curl \
     --request POST \
     --header 'Accept: application/json' \
     'http://localhost:8201/lax-search/hello'
-{"err":"BadSearchTermErr"}
+"BadSearchTermErr"
 ```
 
 There is also a strict api, that requires `hello` to be capitalized like `Hello`:
@@ -142,12 +142,12 @@ $ curl \
     --request POST \
     --header 'Accept: application/json' \
     'http://localhost:8201/strict-search/hello'
-{"err":"IncorrectCapitalization"}
+"IncorrectCapitalization"
 $ curl \
     --request POST \
     --header 'Accept: application/json' \
     'http://localhost:8201/strict-search/Hello'
-{"data":"good"}
+"good"
 ```
 
 ### Run the client
@@ -202,11 +202,11 @@ search api:
 
 - This is a successful response.
 
-{"data":"good"}
+"good"
 
 - a completely incorrect search term was used
 
-{"err":"BadSearchTermErr"}
+"BadSearchTermErr"
 ```
 
 You can see that both the success and error responses are documented.
